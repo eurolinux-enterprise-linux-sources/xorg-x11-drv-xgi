@@ -32,10 +32,10 @@
 
 /* For calculating refresh rate index (CR33) */
 static const struct _xgi_vrate {
-    CARD16 idx;
-    CARD16 xres;
-    CARD16 yres;
-    CARD16 refresh;
+    uint16_t idx;
+    uint16_t xres;
+    uint16_t yres;
+    uint16_t refresh;
     BOOLEAN XGI730valid32bpp;
 } xgix_vrate[] = {
 	{1,  320,  200,  70,  TRUE},
@@ -493,10 +493,10 @@ static const MyXGITVVScale XGITVVScale[] = {
       },
 };
 
-unsigned const char XGIScalingP1Regs[] = {
+static unsigned const char XGIScalingP1Regs[] = {
 	0x08,0x09,0x0b,0x0c,0x0d,0x0e,0x10,0x11,0x12
 };
-unsigned const char XGIScalingP4Regs[] = {
+static unsigned const char XGIScalingP4Regs[] = {
 	0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b
 };
 
@@ -741,7 +741,7 @@ static Bool XGISaveScreenDH(ScreenPtr pScreen, int mode);
 /* Optional functions */
 static void       XGIFreeScreen(FREE_SCREEN_ARGS_DECL);
 
-static int      XGIValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose,
+static int      XGIValidMode(SCRN_ARG_TYPE arg, DisplayModePtr mode, Bool verbose,
                              int flags);
 /* Internally used functions */
 static Bool    XGIMapMem(ScrnInfoPtr pScrn);

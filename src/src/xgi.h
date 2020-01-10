@@ -32,13 +32,6 @@
 #ifndef _XGI_H_
 #define _XGI_H_
 
-#define DEBUG 
-#define DEBUG1
-#define DEBUG2
-#define DEBUG3
-#define DEBUG4
-#define DEBUG5
-
 /***************
 #define DEBUG 
 #define DEBUG1
@@ -51,7 +44,7 @@
 
 #ifndef XGI_VIDEO_HW /* avoid compile error in xgi_videohw.c; weird!  */
 /* Jong 07/27/2009; use run-time debug instead except for HW acceleration routines */
-extern BOOL g_bRunTimeDebug;
+extern Bool g_bRunTimeDebug;
 #define RUNTIMEDEBUG(p)		if(g_bRunTimeDebug)p;
 
 /* Jong@08052009 */
@@ -625,7 +618,7 @@ typedef struct {
     unsigned long       FbAddress;      /* VRAM physical address (in DHM: for each Fb!) */
     unsigned long       realFbAddress;  /* For DHM/PCI mem mapping: store global FBAddress */
     unsigned char *     FbBase;         /* VRAM virtual linear address */
-    CARD32              IOAddress;      /* MMIO physical address */
+    uint32_t              IOAddress;    /* MMIO physical address */
     unsigned char *     IOBase;         /* MMIO linear address */
     unsigned long           IODBase;        /* Base of PIO memory area */
 #ifdef __alpha__
@@ -666,7 +659,7 @@ typedef struct {
     int                 CommandReg;
 
     Bool                HWCursor;
-    CARD16		        CursorSize;  		/* Size of HWCursor area (bytes) */
+    uint16_t		CursorSize;  		/* Size of HWCursor area (bytes) */
     xf86CursorInfoPtr   CursorInfoPtr;
     unsigned            CursorOffset;
 
@@ -684,10 +677,10 @@ typedef struct {
 #ifdef XGI_USE_EXA /* Jong 01/13/2009; support EXA */
     ExaDriverPtr		EXADriverPtr;
     int			fillPitch, fillBpp;
-    CARD32		fillDstBase;
+    uint32_t		fillDstBase;
     int			copyBpp;
     int			copySPitch, copyDPitch;
-    CARD32		copySrcBase, copyDstBase;
+    uint32_t		copySrcBase, copyDstBase;
     int			copyXdir, copyYdir;
     ExaOffscreenArea*	exa_scratch;
     unsigned int 		exa_scratch_next;
@@ -800,19 +793,19 @@ typedef struct {
     unsigned char 	LCDon;
     Bool 		Blank;
     int 		CRT1off;		/* 1=CRT1 off, 0=CRT1 on */
-    CARD16 		LCDheight;		/* Vertical resolution of LCD panel */
-    CARD16 		LCDwidth;		/* Horizontal resolution of LCD panel */
+    uint16_t 		LCDheight;		/* Vertical resolution of LCD panel */
+    uint16_t 		LCDwidth;		/* Horizontal resolution of LCD panel */
     vbeInfoPtr 		pVbe;			/* For VESA mode switching */
     UCHAR ScratchSet[16];
     MonitorRangeRec CRT1Range,CRT2Range;
 
 #ifdef XGIDUALHEAD
-    BOOL 		DualHeadMode;		/* TRUE if we use dual head mode */
-    BOOL 		SecondHead;		/* TRUE is this is the second head */
+    Bool 		DualHeadMode;		/* TRUE if we use dual head mode */
+    Bool 		SecondHead;		/* TRUE is this is the second head */
     XGIEntPtr 		entityPrivate;		/* Ptr to private entity (see above) */
 #endif
     XGIFBLayout         CurrentLayout;		/* Current framebuffer layout */
-    BOOL		Primary;		/* Display adapter is primary */
+    Bool		Primary;		/* Display adapter is primary */
     xf86Int10InfoPtr    pInt;			/* Our int10 */
     
     /**
@@ -849,10 +842,10 @@ typedef struct {
     BOOLEAN		XvDefDisableGfx, XvDefDisableGfxLR;
     BOOLEAN		XvUseMemcpy;
     int			XvGammaRed, XvGammaGreen, XvGammaBlue;
-    CARD8		XvGammaRampRed[256], XvGammaRampGreen[256], XvGammaRampBlue[256];
+    uint8_t		XvGammaRampRed[256], XvGammaRampGreen[256], XvGammaRampBlue[256];
     BOOLEAN		disablecolorkeycurrent;
-    CARD32		colorKey;
-    CARD32		MiscFlags;
+    uint32_t		colorKey;
+    uint32_t		MiscFlags;
 
 #ifdef XGI_USE_XAA
     FBLinearPtr		AccelLinearScratch;
@@ -1022,7 +1015,9 @@ extern void XGI_SetRegANDOR(XGIIOADDRESS Port, USHORT Index, USHORT DataAND,
 extern void XGI_SetRegAND(XGIIOADDRESS Port, USHORT Index, USHORT DataAND);
 extern void XGI_SetRegOR(XGIIOADDRESS Port, USHORT Index, USHORT DataOR);
 
+#ifndef uint8_t
 #define uint8_t	CARD8
+#endif
 extern void XGI_WriteDAC(XGIIOADDRESS dac_data, unsigned shift,
     unsigned ordering, uint8_t red, uint8_t green, uint8_t blue);
 

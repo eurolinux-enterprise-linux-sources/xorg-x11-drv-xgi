@@ -50,7 +50,7 @@
 /* #include "valid_mode.h" */
 
 #define _XF86DGA_SERVER_
-#include <X11/extensions/xf86dgastr.h>
+#include <X11/extensions/xf86dgaproto.h>
 
 #include "globals.h"
 #ifdef HAVE_XEXTPROTO_71
@@ -65,7 +65,7 @@
 extern  int  FbDevExist;
 
 static Bool bAccessVGAPCIInfo(PXGI_HW_DEVICE_INFO pHwDevInfo, ULONG ulOffset,
-    ULONG ulSet, ULONG *pulValue);
+    ULONG ulSet, CARD32 *pulValue);
 static Bool bAccessNBridgePCIInfo(PXGI_HW_DEVICE_INFO pHwDevInfo,
     ULONG ulOffset, ULONG ulSet, ULONG *pulValue);
 static Bool XGI_IsXG21(ScrnInfoPtr pScrn);
@@ -533,7 +533,7 @@ Bool ForceToDisable2DEngine(ScrnInfoPtr pScrn)
 {
     XGIPtr pXGI ;
 	Bool   bReturn=FALSE;
-    CARD8  bForce;
+    uint8_t  bForce;
 
     pXGI = XGIPTR(pScrn); 
 
@@ -659,7 +659,7 @@ XGI_InitHwDevInfo(ScrnInfoPtr pScrn)
 }
 
 Bool
-bAccessVGAPCIInfo(PXGI_HW_DEVICE_INFO pHwDevInfo, ULONG ulOffset, ULONG ulSet, ULONG *pulValue)
+bAccessVGAPCIInfo(PXGI_HW_DEVICE_INFO pHwDevInfo, ULONG ulOffset, ULONG ulSet, CARD32 *pulValue)
 {
     XGIPtr pXGI ;
 #ifdef XSERVER_LIBPCIACCESS

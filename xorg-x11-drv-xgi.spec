@@ -1,7 +1,7 @@
 %define tarball xf86-video-xgi
 %define moduledir %(pkg-config xorg-server --variable=moduledir )
 %define driverdir	%{moduledir}/drivers
-%define gitdate 20121114
+#define gitdate 20121114
 
 %if 0%{?gitdate}
 %define gver .%{gitdate}git
@@ -9,8 +9,8 @@
 
 Summary:   Xorg X11 xgi video driver
 Name:      xorg-x11-drv-xgi
-Version:   1.6.0
-Release:   20%{?gver}%{?dist}
+Version:   1.6.1
+Release:   1%{?gver}%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
@@ -26,11 +26,7 @@ Patch1: xgi-1.6.0-ulong.patch
 Patch4: xgi-1.6.0-module-data.patch
 Patch6: xgi-1.6.0-xorg-version-current.patch
 Patch7: xgi-z9s-fix-dpms.patch
-Patch8: 0001-Fix-XGIValidMode-for-1.13-API.patch
-Patch9: 0001-i2c-Don-t-scream-on-literally-every-single-write-to-.patch
-Patch10: 0002-ddc-Fix-uncredible-fail-in-calling-xf86UnloadSubModu.patch
-Patch11: 0001-Remove-mibstore.h-to-make-driver-build-again.patch
-Patch12: 0001-Remove-call-to-miInitializeBackingStore-to-make-the-.patch
+Patch8: xgi-1.6.1-open.patch
 
 ExcludeArch: s390 s390x
 
@@ -51,11 +47,7 @@ X.Org X11 xgi video driver.
 %patch4 -p1 -b .module-data
 %patch6 -p1 -b .xvc
 %patch7 -p1 -b .dpms
-%patch8 -p1 -b .abi
-%patch9 -p1 -b .hush
-%patch10 -p1 -b .ddc-crash
-%patch11 -p1 -b .mibstore
-%patch12 -p1 -b .mibstore2
+%patch8 -p1 -b .open
 
 %build
 %if 0%{?gitdate}
@@ -88,6 +80,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man4/xgi.4*
 
 %changelog
+* Wed Nov 11 2015 Adam Jackson <ajax@redhat.com> 1.6.1-1
+- xgi 1.6.1
+
+* Wed Nov 11 2015 Adam Jackson <ajax@redhat.com> - 1.6.0-21.20121114git
+- Rebuild for server 1.17
+
 * Thu Sep 11 2014 Adam Jackson <ajax@redhat.com> 1.6.0-20
 - Fix initialization to work post-mibs-removal
 

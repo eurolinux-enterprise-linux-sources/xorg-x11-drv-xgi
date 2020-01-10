@@ -47,10 +47,6 @@
 #include "config.h"
 #endif
 
-#define  PACKAGE_VERSION_MAJOR   6
-#define  PACKAGE_VERSION_MINOR   1
-#define  PACKAGE_VERSION_PATCHLEVEL   6803
-
 #include "fb.h"
 #include "micmap.h"
 #include "xf86.h"
@@ -70,7 +66,6 @@
 #include "vbe.h"
 
 #include "mipointer.h"
-#include "mibstore.h"
 
 #include "xgi.h"
 #include "xgi_regs.h"
@@ -79,9 +74,10 @@
 #include "vb_def.h"
 #include "xgi_driver.h"
 #include "valid_mode.h"
+#include "vb_i2c.h"
 
 #define _XF86DGA_SERVER_
-#include <X11/extensions/xf86dgastr.h>
+#include <X11/extensions/xf86dgaproto.h>
 
 #include "globals.h"
 
@@ -110,11 +106,8 @@
 #define DEFAULT_DPI 96
 #endif
 
-/* Jong 01/22/2009; compiler error; type conflict */
-/*
 #include <fcntl.h>
 #include <sys/ioctl.h>
-*/
 
 #ifdef XSERVER_LIBPCIACCESS
 static Bool XGIPciProbe(DriverPtr drv, int entity_num,
@@ -136,7 +129,7 @@ xf86MonPtr  g_pMonitorDVI=NULL; /* Jong 12/04/2007; used for filtering of CRT1 m
 
 /* Jong 07/27/2009; use run-time debug instead except for HW acceleration routines */
 /* Set Option "RunTimeDebug" to "true" in X configuration file */
-BOOL g_bRunTimeDebug=0;
+Bool g_bRunTimeDebug=0;
 
 /* Jong@09072009 */
 unsigned char g_DVI_I_SignalType = 0x00;
@@ -629,7 +622,7 @@ XGIDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
 
 typedef struct 
 {
-	unsigned char   name[10];
+    char   name[10];
     unsigned int    DCLK;
     unsigned int    HDisplay;
     unsigned int    HSyncStart;
@@ -729,13 +722,13 @@ XGIErrorLog(ScrnInfoPtr pScrn, const char *format, ...)
         "**************************************************\n";
 
     va_start(ap, format);
-    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, str);
+    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "%s", str);
     xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "                      ERROR:\n");
     xf86VDrvMsgVerb(pScrn->scrnIndex, X_ERROR, 1, format, ap);
     va_end(ap);
     xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                "                  END OF MESSAGE\n");
-    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, str);
+    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "%s", str);
 }
 
 #ifdef XSERVER_LIBPCIACCESS
@@ -1563,7 +1556,6 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
                            "CRT%d DDC EDID corrupt\n", crtno + 1);
                 return (NULL);
             }
-            xf86UnloadSubModule("ddc");
         }
         else {
             xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
@@ -2630,12 +2622,12 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 		  vgaHWSetMmioFuncs(VGAHWPTR(pScrn), VGAHWPTR(pScrn)->Base, 0); 	
 #endif
 
-		  xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 3, 
-				  "VGA memory map from 0x%x to 0x%x \n", 
+		  xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 3,
+				  "VGA memory map from %p to %p \n",
 #ifdef XSERVER_LIBPCIACCESS
-				  pXGI->PciInfo->regions[2].base_addr, VGAHWPTR(pScrn)->Base);
+				  (void *)(intptr_t)pXGI->PciInfo->regions[2].base_addr, VGAHWPTR(pScrn)->Base);
 #else
-				  pXGI->PciInfo->ioBase[2], VGAHWPTR(pScrn)->Base);
+				  (void *)(intptr_t)pXGI->PciInfo->ioBase[2], VGAHWPTR(pScrn)->Base);
 #endif
         }
     }
@@ -2911,7 +2903,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     pXGI->xgi_HwDevExt.pjIOAddress = (pointer)((XGIIOADDRESS) (pXGI->RelIO + 0x30));
     xf86DrvMsg(pScrn->scrnIndex, from, "Relocated IO registers at 0x%lX\n",
                (unsigned long) pXGI->RelIO);
-	ErrorF("xgi_driver.c-pXGI->xgi_HwDevExt.pjIOAddress=0x%x...\n", pXGI->xgi_HwDevExt.pjIOAddress);
+    ErrorF("xgi_driver.c-pXGI->xgi_HwDevExt.pjIOAddress=0x%lx...\n", pXGI->xgi_HwDevExt.pjIOAddress);
 
     if (!xf86SetDepthBpp(pScrn, 0, 0, 0, pix24flags)) {
         XGIErrorLog(pScrn, "xf86SetDepthBpp() error\n");
@@ -3589,7 +3581,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 			pScrn->monitor->nHsync = 1;
 			pScrn->monitor->hsync[0].lo=30;
 			pScrn->monitor->hsync[0].hi=50;
-			ErrorF("No HorizSync information set in Monitor section and use default (%d, %d)...\n", 
+			ErrorF("No HorizSync information set in Monitor section and use default (%g, %g)...\n",
 				pScrn->monitor->hsync[0].lo, pScrn->monitor->hsync[0].hi);
 		}
 
@@ -3598,7 +3590,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 			pScrn->monitor->nVrefresh = 1;
 			pScrn->monitor->vrefresh[0].lo=40;
 			pScrn->monitor->vrefresh[0].hi=60;
-			ErrorF("No VertRefresh information set in Monitor section and use default (%d, %d)...\n", 
+			ErrorF("No VertRefresh information set in Monitor section and use default (%g, %g)...\n",
 				pScrn->monitor->vrefresh[0].lo, pScrn->monitor->vrefresh[0].hi);
 		}
 	}
@@ -4896,7 +4888,6 @@ XGIScreenInit(SCREEN_INIT_ARGS_DECL)
     PDEBUG(ErrorF("--- AccelInit ---  \n"));
     PDEBUG(XGIDumpRegs(pScrn));
 
-    miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
     xf86SetSilkenMouse(pScreen);
 
@@ -5707,9 +5698,9 @@ int XGIValidateUserDefMode(XGIPtr pXGI, DisplayModePtr mode)
 /* Checks if a mode is suitable for the selected chipset. */
 
 static int
-XGIValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
+XGIValidMode(SCRN_ARG_TYPE arg, DisplayModePtr mode, Bool verbose, int flags)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
     XGIPtr pXGI = XGIPTR(pScrn);
     int HDisplay = mode->HDisplay;
     int VDisplay = mode->VDisplay;
@@ -6584,7 +6575,11 @@ XGI_GetSetBIOSScratch(ScrnInfoPtr pScrn, USHORT offset, unsigned char value)
 #if (defined(i386) || defined(__i386) || defined(__i386__) || defined(__AMD64__))
     unsigned char *base;
 
+#ifdef XSERVER_LIBPCIACCESS
+    pci_device_map_legacy(XGIPTR(pScrn)->PciInfo, 0, 0x2000, 1, (void**)&base);
+#else
     base = xf86MapVidMem(pScrn->scrnIndex, VIDMEM_MMIO, 0, 0x2000);
+#endif
     if (!base) {
         XGIErrorLog(pScrn, "(Could not map BIOS scratch area)\n");
         return 0;
@@ -6596,7 +6591,11 @@ XGI_GetSetBIOSScratch(ScrnInfoPtr pScrn, USHORT offset, unsigned char value)
     if (value != 0xff)
         *(base + offset) = value;
 
+#ifdef XSERVER_LIBPCIACCESS
+    pci_device_unmap_legacy(XGIPTR(pScrn)->PciInfo, (void*)base, 0x2000);
+#else
     xf86UnMapVidMem(pScrn->scrnIndex, base, 0x2000);
+#endif
 #endif
     return ret;
 }

@@ -1,0 +1,12 @@
+diff -up xf86-video-xgi-1.6.1/src/xgi_driver.c.jx xf86-video-xgi-1.6.1/src/xgi_driver.c
+--- xf86-video-xgi-1.6.1/src/xgi_driver.c.jx	2015-11-11 12:54:27.000000000 -0500
++++ xf86-video-xgi-1.6.1/src/xgi_driver.c	2015-11-11 15:27:32.392047629 -0500
+@@ -2797,7 +2797,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
+     FbDevExist = FALSE;
+    if((pXGI->Chipset != PCI_CHIP_XGIXG20)&&(pXGI->Chipset != PCI_CHIP_XGIXG21)&&( pXGI->Chipset != PCI_CHIP_XGIXG27 ))
+    {
+-        if ((fd = open("/dev/fb", 'r')) != -1) {
++        if ((fd = open("/dev/fb", O_RDONLY)) != -1) {
+             PDEBUG(ErrorF("--- open /dev/fb....   \n"));
+             ioctl(fd, FBIOGET_FSCREENINFO, &fix);
+             if (fix.accel == FB_ACCEL_XGI_GLAMOUR) {

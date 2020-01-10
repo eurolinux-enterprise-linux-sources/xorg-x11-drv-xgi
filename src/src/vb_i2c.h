@@ -5,10 +5,6 @@
 /* Jong@08052009 */
 // #include <linux/delay.h> /* udelay */
 #endif 
-#ifndef u32
-#define u32 unsigned long
-#define u8 unsigned long
-#endif
 
 /* Jong@08052009 */
 //#ifndef DelayUS
@@ -82,7 +78,9 @@
 // set bits as 1 between bit(a) and bit(b)
 #define MASK(n)         ( BITS(LARGE(n)-SMALL(n)+1) << SMALL(n) )
 // get bits [a:b]'s binary value
+#ifndef GETBITS
 #define GETBITS(b,n)    ( ((b) & MASK(n)) >> SMALL(n) ) /* Jong@08032009 */
+#endif
 // set binary value from [a:0] to [c:d]
 #define SETBITS(b, n)   ( ( (b) << ((1?n) > (0?n) ? (0?n) : (1?n)) ) & MASK(n) )
 // move bits value from [a:b] to [c:d]
@@ -91,9 +89,9 @@
 
 typedef struct _I2CControl {
         ULONG Command;          /*  I2C_COMMAND_* */
-        u32   dwCookie;         /* Context identifier returned on Open */
-        u8    Data;             /* Data to write, or returned UCHAR */
-        u8    Reserved[3];      /* Filler */
+        uint32_t   dwCookie;         /* Context identifier returned on Open */
+        uint8_t    Data;             /* Data to write, or returned UCHAR */
+        uint8_t    Reserved[3];      /* Filler */
         ULONG Flags;            /*  I2C_FLAGS_* */
         ULONG Status;           /* I2C_STATUS_*  */
         ULONG ClockRate;        /* Bus clockrate in Hz. */
@@ -101,9 +99,9 @@ typedef struct _I2CControl {
 
 typedef struct _I2CContext
 {
-    u32 dwI2CPortAcquired;            /* port busy between start and stop */
-    u32 dwCookie;                  /* cookie image for this instance */
-    u32 dwCurCookie;                  /* cookie of current I2C channel owner */
+    uint32_t dwI2CPortAcquired;            /* port busy between start and stop */
+    uint32_t dwCookie;                     /* cookie image for this instance */
+    uint32_t dwCurCookie;                  /* cookie of current I2C channel owner */
 } I2C_CONTEXT, *PI2C_CONTEXT;
 
 
@@ -180,5 +178,6 @@ extern  BOOLEAN ResetI2C(PXGI_HW_DEVICE_INFO pHWDE,  PI2CControl pI2CControl);
 extern  BOOLEAN I2CRead(PXGI_HW_DEVICE_INFO pHWDE,PI2CControl pI2CControl);
 extern  BOOLEAN I2CWrite(PXGI_HW_DEVICE_INFO pHWDE,  PI2CControl pI2CControl);
 extern  BOOLEAN ResetI2C(PXGI_HW_DEVICE_INFO pHWDE,  PI2CControl pI2CControl);
+extern  BOOLEAN bGetEDID(PXGI_HW_DEVICE_INFO, ULONG , PUCHAR, ULONG);
 
 #endif
