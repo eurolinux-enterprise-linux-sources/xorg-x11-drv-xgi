@@ -4,12 +4,10 @@
 
 %define cvsdate xxxxxxx
 
-%define with_dri	1
-
 Summary:   Xorg X11 xgi video driver
 Name:      xorg-x11-drv-xgi
 Version:   1.6.0
-Release:   7%{?dist}.1
+Release:   11%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
@@ -29,12 +27,11 @@ ExcludeArch: s390 s390x
 
 BuildRequires: pkgconfig
 BuildRequires: xorg-x11-server-sdk >= 1.1.0-2
-%if %{with_dri}
 BuildRequires: mesa-libGL-devel >= 6.4-4
 BuildRequires: libdrm-devel >= 2.0-1
-%endif
 
-Requires:  xorg-x11-server-Xorg >= 1.0.99.901
+Requires:  Xorg %(xserver-sdk-abi-requires ansic)
+Requires:  Xorg %(xserver-sdk-abi-requires videodrv)
 
 %description 
 X.Org X11 xgi video driver.
@@ -51,6 +48,7 @@ X.Org X11 xgi video driver.
 
 %build
 %configure --disable-static
+make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -76,8 +74,15 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man4/xgi.4*
 
 %changelog
-* Mon Aug 15 2011 Adam Jackson <ajax@redhat.com> 1.6.0-7.1
-- xgi-z9s-fix-dpms.patch: Fix DPMS-on on XG21 (Z9s, Z9m) (#730649)
+* Tue Sep 13 2011 Adam Jackson <ajax@redhat.com> 1.6.0-11
+- spec fix (#708157)
+
+* Fri Aug 05 2011 Adam Jackson <ajax@redhat.com> 1.6.0-10
+- xgi-z9s-fix-dpms.patch: Fix DPMS-on on XG21 chips, including Z9s and
+  Z9m (#704094)
+
+* Tue Jun 28 2011 Ben Skeggs <bskeggs@redhat.com> - 1.6.0-8
+- rebuild for 6.2 server rebase
 
 * Tue Apr 26 2011 Adam Jackson <ajax@redhat.com> 1.6.0-7
 - xgi-1.6.0-xorg-version-current.patch: Yet more yet more API skew. (#631738)
