@@ -1,32 +1,39 @@
 %define tarball xf86-video-xgi
 %define moduledir %(pkg-config xorg-server --variable=moduledir )
 %define driverdir	%{moduledir}/drivers
+%define gitdate 20121114
 
-%define cvsdate xxxxxxx
+%if 0%{?gitdate}
+%define gver .%{gitdate}git
+%endif
 
 Summary:   Xorg X11 xgi video driver
 Name:      xorg-x11-drv-xgi
 Version:   1.6.0
-Release:   11%{?dist}
+Release:   18%{?gver}%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
 
+%if 0%{?gitdate}
+Source0:   %{tarball}-%{gitdate}.tar.bz2
+%else
 Source0:   ftp://ftp.x.org/pub/individual/driver/%{tarball}-%{version}.tar.bz2
+%endif
 Source1:   xgi.xinf
 
 Patch1: xgi-1.6.0-ulong.patch
-Patch2: xgi-1.6.0-big-endian.patch
-Patch3: xgi-fix.patch
 Patch4: xgi-1.6.0-module-data.patch
-Patch5: xgi-1.6.0-symlists.patch
 Patch6: xgi-1.6.0-xorg-version-current.patch
 Patch7: xgi-z9s-fix-dpms.patch
+Patch8: 0001-Fix-XGIValidMode-for-1.13-API.patch
+Patch9: 0001-i2c-Don-t-scream-on-literally-every-single-write-to-.patch
+Patch10: 0002-ddc-Fix-uncredible-fail-in-calling-xf86UnloadSubModu.patch
 
 ExcludeArch: s390 s390x
 
 BuildRequires: pkgconfig
-BuildRequires: xorg-x11-server-sdk >= 1.1.0-2
+BuildRequires: xorg-x11-server-devel >= 1.13.0
 BuildRequires: mesa-libGL-devel >= 6.4-4
 BuildRequires: libdrm-devel >= 2.0-1
 
@@ -37,17 +44,20 @@ Requires:  Xorg %(xserver-sdk-abi-requires videodrv)
 X.Org X11 xgi video driver.
 
 %prep
-%setup -q -n %{tarball}-%{version}
+%setup -q -n %{tarball}-%{?gitdate:%{gitdate}}%{?!gitdate:%{version}}
 %patch1 -p1 -b .ulong
-%patch2 -p1 -b .endian
-%patch3 -p1 -b .makefile
 %patch4 -p1 -b .module-data
-%patch5 -p1 -b .symlists
 %patch6 -p1 -b .xvc
 %patch7 -p1 -b .dpms
+%patch8 -p1 -b .abi
+%patch9 -p1 -b .hush
+%patch10 -p1 -b .ddc-crash
 
 %build
-%configure --disable-static
+%if 0%{?gitdate}
+autoreconf -v --install || exit 1
+%endif
+%configure --disable-static --disable-xaa
 make %{?_smp_mflags}
 
 %install
@@ -74,6 +84,26 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man4/xgi.4*
 
 %changelog
+* Fri Jan 18 2013 Adam Jackson <ajax@redhat.com> 1.6.0-18
+- Silence amazing amounts of log spam in the i2c code (#888607)
+- Fix a crash in DDC fetch (#888607)
+
+* Mon Jan 07 2013 Adam Jackson <ajax@redhat.com> 1.6.0-17
+- Fix crash in mode validation (#873599)
+- Explicitly build without XAA
+
+* Wed Nov 14 2012 Adam Jackson <ajax@redhat.com> 1.6.0-16
+- Sync with git (#873599)
+
+* Tue Aug 29 2012 Jerome Glisse <jglisse@redhat.com> 1.6.0-14.20120807git
+- Resolves: #835267
+
+* Wed Aug 22 2012 airlied@redhat.com - 1.6.0-13.20120807git
+- rebuild for server ABI requires
+
+* Tue Aug 07 2012 Jerome Glisse <jglisse@redhat.com> 1.6.0-12-20120807
+- temporary git snapshot, to fix deps after X server rebuild
+
 * Tue Sep 13 2011 Adam Jackson <ajax@redhat.com> 1.6.0-11
 - spec fix (#708157)
 

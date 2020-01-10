@@ -1,0 +1,30 @@
+From d963d20a7f6368dee4140366f4e65a4ca07dcbc8 Mon Sep 17 00:00:00 2001
+From: Adam Jackson <ajax@redhat.com>
+Date: Fri, 18 Jan 2013 13:23:17 -0500
+Subject: [PATCH 2/2] ddc: Fix uncredible fail in calling xf86UnloadSubModule
+
+xf86UnloadSubModule() takes a ModuleDescPtr, though you wouldn't know it
+from the prototype; it most certainly does not take a string.  Also, ddc
+has been a built-in module since RANDR 1.2 or so, so this call would
+have been a no-op even if it were correct.
+
+Signed-off-by: Adam Jackson <ajax@redhat.com>
+---
+ src/xgi_driver.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/xgi_driver.c b/src/xgi_driver.c
+index 0292296..d5da592 100755
+--- a/src/xgi_driver.c
++++ b/src/xgi_driver.c
+@@ -1563,7 +1563,6 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
+                            "CRT%d DDC EDID corrupt\n", crtno + 1);
+                 return (NULL);
+             }
+-            xf86UnloadSubModule("ddc");
+         }
+         else {
+             xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+-- 
+1.8.0.2
+

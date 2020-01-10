@@ -54,7 +54,7 @@
 #include "fb.h"
 #include "micmap.h"
 #include "xf86.h"
-#include "xf86Priv.h"
+#include "xf86Module.h"
 #include "xf86_OSproc.h"
 #if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
 #include "xf86Resources.h"
@@ -104,6 +104,10 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifndef DEFAULT_DPI
+#define DEFAULT_DPI 96
 #endif
 
 /* Jong 01/22/2009; compiler error; type conflict */
@@ -223,136 +227,6 @@ static PciChipsets XGIPciChipsets[] = {
     {PCI_CHIP_XGIXG27, PCI_CHIP_XGIXG27, RES_SHARED_VGA },
     {-1, -1, RES_UNDEFINED}
 };
-
-static const char *xaaSymbols[] = {
-    "XAACopyROP",
-    "XAACreateInfoRec",
-    "XAADestroyInfoRec",
-    "XAAFillMono8x8PatternRects",
-    "XAAPatternROP",
-    "XAAHelpPatternROP",
-    "XAAInit",
-    NULL
-};
-
-#ifdef XGI_USE_EXA
-static const char *exaSymbols[] = {
-    "exaGetVersion",
-    "exaDriverInit",
-    "exaDriverFini",
-    "exaOffscreenAlloc",
-    "exaOffscreenFree",
-    NULL
-};
-#endif
-
-static const char *vgahwSymbols[] = {
-    "vgaHWFreeHWRec",
-    "vgaHWGetHWRec",
-    "vgaHWGetIOBase",
-    "vgaHWGetIndex",
-    "vgaHWInit",
-    "vgaHWLock",
-    "vgaHWMapMem",
-    "vgaHWUnmapMem",
-    "vgaHWProtect",
-    "vgaHWRestore",
-    "vgaHWSave",
-    "vgaHWSaveScreen",
-    "vgaHWUnlock",
-    NULL
-};
-
-static const char *fbSymbols[] = {
-    "fbPictureInit",
-    "fbScreenInit",
-    NULL
-};
-
-static const char *shadowSymbols[] = {
-    "ShadowFBInit",
-    NULL
-};
-
-static const char *ramdacSymbols[] = {
-    "xf86CreateCursorInfoRec",
-    "xf86DestroyCursorInfoRec",
-    "xf86InitCursor",
-    NULL
-};
-
-
-static const char *ddcSymbols[] = {
-    "xf86PrintEDID",
-    "xf86SetDDCproperties",
-    "xf86InterpretEDID",
-    NULL
-};
-
-
-/* static const char *i2cSymbols[] = {
-    "xf86I2CBusInit",
-    "xf86CreateI2CBusRec",
-    NULL
-}; */
-
-static const char *int10Symbols[] = {
-    "xf86FreeInt10",
-    "xf86InitInt10",
-    "xf86ExecX86int10",
-    NULL
-};
-
-static const char *vbeSymbols[] = {
-    "VBEExtendedInit",
-    "vbeDoEDID",
-    "vbeFree",
-    "VBEGetVBEInfo",
-    "VBEFreeVBEInfo",
-    "VBEGetModeInfo",
-    "VBEFreeModeInfo",
-    "VBESaveRestore",
-    "VBESetVBEMode",
-    "VBEGetVBEMode",
-    "VBESetDisplayStart",
-    "VBESetGetLogicalScanlineLength",
-    NULL
-};
-
-#ifdef XF86DRI
-static const char *drmSymbols[] = {
-    "drmAddMap",
-    "drmAgpAcquire",
-    "drmAgpAlloc",
-    "drmAgpBase",
-    "drmAgpBind",
-    "drmAgpEnable",
-    "drmAgpFree",
-    "drmAgpGetMode",
-    "drmAgpRelease",
-    "drmCtlInstHandler",
-    "drmGetInterruptFromBusID",
-    "drmXGIAgpInit",
-    NULL
-};
-
-static const char *driSymbols[] = {
-    "DRICloseScreen",
-    "DRICreateInfoRec",
-    "DRIDestroyInfoRec",
-    "DRIFinishScreenInit",
-    "DRIGetSAREAPrivate",
-    "DRILock",
-    "DRIQueryVersion",
-    "DRIScreenInit",
-    "DRIUnlock",
-#ifdef XGINEWDRI2
-    "GlxSetVisualConfigs",
-    "DRICreatePCIBusID",
-#endif
-    NULL
-};
-#endif
 
 static MODULESETUPPROTO(xgiSetup);
 
@@ -500,13 +374,6 @@ xgiSetup(pointer module, pointer opts, int *errmaj, int *errmin)
         xf86AddDriver(&XGI, module, 0);
 #endif
 
-        LoaderRefSymLists(vgahwSymbols, fbSymbols, xaaSymbols,
-                          shadowSymbols, ramdacSymbols, ddcSymbols,
-                          vbeSymbols, int10Symbols,
-#ifdef XF86DRI
-                          drmSymbols, driSymbols,
-#endif
-                          NULL);
         return (pointer) TRUE;
     }
 
@@ -556,13 +423,13 @@ XGIFreeRec(ScrnInfoPtr pScrn)
              * head.
              */
             if (pXGIEnt->BIOS)
-                xfree(pXGIEnt->BIOS);
+                free(pXGIEnt->BIOS);
             pXGIEnt->BIOS = pXGI->BIOS = NULL;
             if (pXGIEnt->XGI_Pr)
-                xfree(pXGIEnt->XGI_Pr);
+                free(pXGIEnt->XGI_Pr);
             pXGIEnt->XGI_Pr = pXGI->XGI_Pr = NULL;
             if (pXGIEnt->RenderAccelArray)
-                xfree(pXGIEnt->RenderAccelArray);
+                free(pXGIEnt->RenderAccelArray);
             pXGIEnt->RenderAccelArray = pXGI->RenderAccelArray = NULL;
         }
         else {
@@ -573,19 +440,19 @@ XGIFreeRec(ScrnInfoPtr pScrn)
     }
     else {
         if (pXGI->BIOS)
-            xfree(pXGI->BIOS);
+            free(pXGI->BIOS);
         pXGI->BIOS = NULL;
         if (pXGI->XGI_Pr)
-            xfree(pXGI->XGI_Pr);
+            free(pXGI->XGI_Pr);
         pXGI->XGI_Pr = NULL;
         if (pXGI->RenderAccelArray)
-            xfree(pXGI->RenderAccelArray);
+            free(pXGI->RenderAccelArray);
         pXGI->RenderAccelArray = NULL;
     }
 
 #ifdef XGIMERGED
     if (pXGI->MetaModes)
-        xfree(pXGI->MetaModes);
+        free(pXGI->MetaModes);
     pXGI->MetaModes = NULL;
 
     if (pXGI->CRT1Modes) {
@@ -595,8 +462,8 @@ XGIFreeRec(ScrnInfoPtr pScrn)
                 do {
                     DisplayModePtr p = pScrn->currentMode->next;
                     if (pScrn->currentMode->Private)
-                        xfree(pScrn->currentMode->Private);
-                    xfree(pScrn->currentMode);
+                        free(pScrn->currentMode->Private);
+                    free(pScrn->currentMode);
                     pScrn->currentMode = p;
                 } while (pScrn->currentMode != pScrn->modes);
             }
@@ -612,7 +479,7 @@ XGIFreeRec(ScrnInfoPtr pScrn)
     pXGI->pVbe = NULL;
     if (pScrn->driverPrivate == NULL)
         return;
-    xfree(pScrn->driverPrivate);
+    free(pScrn->driverPrivate);
     pScrn->driverPrivate = NULL;
 }
 
@@ -975,7 +842,7 @@ XGIProbe(DriverPtr drv, int flags)
                                     numDevSections, drv, &usedChips);
 
     /* Free it since we don't need that list after this */
-    xfree(devSections);
+    free(devSections);
     if (numUsed <= 0)
         return FALSE;
 
@@ -1015,7 +882,7 @@ XGIProbe(DriverPtr drv, int flags)
 
 #endif
         }
-    xfree(usedChips);
+    free(usedChips);
 
     return foundScreen;
 }
@@ -1044,11 +911,11 @@ XGICopyModeNLink(ScrnInfoPtr pScrn, DisplayModePtr dest,
 
 	ErrorF("XGICopyModeNLink()...Use Virtual Size-1\n");
 
-    if (!((mode = xalloc(sizeof(DisplayModeRec)))))
+    if (!((mode = malloc(sizeof(DisplayModeRec)))))
         return dest;
     memcpy(mode, i, sizeof(DisplayModeRec));
-    if (!((mode->Private = xalloc(sizeof(XGIMergedDisplayModeRec))))) {
-        xfree(mode);
+    if (!((mode->Private = malloc(sizeof(XGIMergedDisplayModeRec))))) {
+        free(mode);
         return dest;
     }
     ((XGIMergedDisplayModePtr) mode->Private)->CRT1 = i;
@@ -1125,8 +992,8 @@ XGICopyModeNLink(ScrnInfoPtr pScrn, DisplayModePtr dest,
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "Skipped %dx%d, not enough video RAM or beyond hardware specs\n",
                    mode->HDisplay, mode->VDisplay);
-        xfree(mode->Private);
-        xfree(mode);
+        free(mode->Private);
+        free(mode);
 
         return dest;
     }
@@ -1559,10 +1426,10 @@ XGIFreeCRT2Structs(XGIPtr pXGI)
                                    pXGI->CRT2pScrn->monitor->Modes);
             }
             if (pXGI->CRT2pScrn->monitor->DDC)
-                xfree(pXGI->CRT2pScrn->monitor->DDC);
-            xfree(pXGI->CRT2pScrn->monitor);
+                free(pXGI->CRT2pScrn->monitor->DDC);
+            free(pXGI->CRT2pScrn->monitor);
         }
-        xfree(pXGI->CRT2pScrn);
+        free(pXGI->CRT2pScrn);
         pXGI->CRT2pScrn = NULL;
     }
 }
@@ -1615,7 +1482,6 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
     ErrorF("get EDID with VBIOS call...\n");
     if (xf86LoadSubModule(pScrn, "int10")) 
 	{
-        xf86LoaderReqSymLists(int10Symbols, NULL);
         pInt = xf86InitInt10(pXGI->pEnt->index);
         if (pInt == NULL) {
             xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
@@ -1676,8 +1542,6 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
 
 			g_DVI_I_SignalType = (buffer[20] & 0x80) >> 7;
 			ErrorF("DVI-I : %s signal ...\n", (g_DVI_I_SignalType == 0x01) ? "DVI" : "CRT" );
-
-            xf86LoaderReqSymLists(ddcSymbols, NULL);
 
 			/* Jong 09/04/2007; Alan fixed abnormal EDID data */
 			/* pMonitor = xf86InterpretEDID(pScrn->scrnIndex, buffer) ; */
@@ -2219,8 +2083,6 @@ XGIDDCPreInit(ScrnInfoPtr pScrn)
         if (xf86LoadSubModule(pScrn, "ddc")) 
 		{
 
-            xf86LoaderReqSymLists(ddcSymbols, NULL);
-
             if (pXGI->xgi_HwDevExt.jChipType == XG27) 
 			{
 				ErrorF("Getting CRT EDID (DAC1-CRT1)...\n");
@@ -2438,7 +2300,7 @@ XGIDDCPreInit(ScrnInfoPtr pScrn)
 
 #ifdef XGIMERGED
     if (pXGI->MergedFB) {
-        pXGI->CRT2pScrn->monitor = xalloc(sizeof(MonRec));
+        pXGI->CRT2pScrn->monitor = malloc(sizeof(MonRec));
         if (pXGI->CRT2pScrn->monitor) {
             DisplayModePtr tempm = NULL, currentm = NULL, newm = NULL;
             memcpy(pXGI->CRT2pScrn->monitor, pScrn->monitor, sizeof(MonRec));
@@ -2446,11 +2308,11 @@ XGIDDCPreInit(ScrnInfoPtr pScrn)
             pXGI->CRT2pScrn->monitor->Modes = NULL;
             tempm = pScrn->monitor->Modes;
             while (tempm) {
-                if (!(newm = xalloc(sizeof(DisplayModeRec))))
+                if (!(newm = malloc(sizeof(DisplayModeRec))))
                     break;
                 memcpy(newm, tempm, sizeof(DisplayModeRec));
-                if (!(newm->name = xalloc(strlen(tempm->name) + 1))) {
-                    xfree(newm);
+                if (!(newm->name = malloc(strlen(tempm->name) + 1))) {
+                    free(newm);
                     break;
                 }
                 strcpy(newm->name, tempm->name);
@@ -2490,7 +2352,7 @@ XGIDDCPreInit(ScrnInfoPtr pScrn)
                         "Failed to allocate memory for CRT2 monitor, %s.\n",
                         mergeddisstr);
             if (pXGI->CRT2pScrn)
-                xfree(pXGI->CRT2pScrn);
+                free(pXGI->CRT2pScrn);
             pXGI->CRT2pScrn = NULL;
             pXGI->MergedFB = FALSE;
         }
@@ -2685,8 +2547,6 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
         return FALSE;
     }
 
-    xf86LoaderReqSymLists(vgahwSymbols, NULL);
-
     /* Due to the liberal license terms this is needed for
      * keeping the copyright notice readable and intact in
      * binary distributions. Removing this is a copyright
@@ -2704,6 +2564,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
         XGIErrorLog(pScrn, "Could not allocate VGA private\n");
         return FALSE;
     }
+    vgaHWSetStdFuncs(VGAHWPTR(pScrn));
 
     /* Allocate the XGIRec driverPrivate */
     pXGI = XGIGetRec(pScrn);
@@ -2712,7 +2573,9 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
         return FALSE;
     }
 
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 12
     pXGI->IODBase = pScrn->domainIOBase;
+#endif
 
 
     /* Get the entity, and make sure it is PCI. */
@@ -2778,6 +2641,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     }
     vgaHWGetIOBase(VGAHWPTR(pScrn));
 
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 12
 	/* Jong@08262009; why not to modify ??? */
     /* We "patch" the PIOOffset inside vgaHW in order to force
      * the vgaHW module to use our relocated i/o ports.
@@ -2789,6 +2653,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
         (pXGI->PciInfo->ioBase[2] & 0xFFFC)
 #endif
         ;
+#endif
 
     pXGI->pInt = NULL;
     if (!pXGI->Primary) {
@@ -2798,7 +2663,6 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
                    "Initializing display adapter through int10\n");
 
         if (xf86LoadSubModule(pScrn, "int10")) {
-            xf86LoaderReqSymLists(int10Symbols, NULL);
             pXGI->pInt = xf86InitInt10(pXGI->pEnt->index);
         }
         else {
@@ -2829,8 +2693,6 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
         XGIFreeRec(pScrn);
         return FALSE;
     }
-
-    xf86LoaderReqSymLists(ramdacSymbols, NULL);
 
     /* Set pScrn->monitor */
     pScrn->monitor = pScrn->confScreen->monitor;
@@ -3034,7 +2896,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Get our relocated IO registers */
 #if defined(__arm__) 
-	pXGI->RelIO = (XGIIOADDRESS)(((IOADDRESS)VGAHWPTR(pScrn)->Base & 0xFFFFFFFC) + pXGI->IODBase); 	
+	pXGI->RelIO = (XGIIOADDRESS)(((unsigned long)VGAHWPTR(pScrn)->Base & 0xFFFFFFFC) + pXGI->IODBase); 	
 
 #else
     pXGI->RelIO = (XGIIOADDRESS) (pXGI->IODBase |
@@ -3046,7 +2908,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
                                   );
 #endif
 
-    pXGI->xgi_HwDevExt.pjIOAddress = (XGIIOADDRESS) (pXGI->RelIO + 0x30);
+    pXGI->xgi_HwDevExt.pjIOAddress = (pointer)((XGIIOADDRESS) (pXGI->RelIO + 0x30));
     xf86DrvMsg(pScrn->scrnIndex, from, "Relocated IO registers at 0x%lX\n",
                (unsigned long) pXGI->RelIO);
 	ErrorF("xgi_driver.c-pXGI->xgi_HwDevExt.pjIOAddress=0x%x...\n", pXGI->xgi_HwDevExt.pjIOAddress);
@@ -3540,7 +3402,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
         /* Do some MergedFB mode initialisation */
 #ifdef XGIMERGED
         if (pXGI->MergedFB) {
-        pXGI->CRT2pScrn = xalloc(sizeof(ScrnInfoRec));
+        pXGI->CRT2pScrn = malloc(sizeof(ScrnInfoRec));
         if (!pXGI->CRT2pScrn) {
             XGIErrorLog(pScrn,
                         "Failed to allocate memory for 2nd pScrn, %s\n",
@@ -3586,7 +3448,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
                     XGIErrorLog(pScrn, mergednocrt1, mergeddisstr);
                 }
                 if (pXGI->CRT2pScrn)
-                    xfree(pXGI->CRT2pScrn);
+                    free(pXGI->CRT2pScrn);
                 pXGI->CRT2pScrn = NULL;
                 pXGI->MergedFB = FALSE;
             }
@@ -3627,7 +3489,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
                 XGIErrorLog(pScrn, mergednocrt2, mergeddisstr);
             }
             if (pXGI->CRT2pScrn)
-                xfree(pXGI->CRT2pScrn);
+                free(pXGI->CRT2pScrn);
             pXGI->CRT2pScrn = NULL;
             pXGI->MergedFB = FALSE;
         }
@@ -3695,7 +3557,6 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 #if !defined(__powerpc__)
     /* Now load and initialize VBE module. */
     if (xf86LoadSubModule(pScrn, "vbe")) {
-        xf86LoaderReqSymLists(vbeSymbols, NULL);
         pXGI->pVbe = VBEExtendedInit(pXGI->pInt, pXGI->pEnt->index,
                                      SET_BIOS_SCRATCH | RESTORE_BIOS_SCRATCH);
         if (!pXGI->pVbe) {
@@ -4117,7 +3978,6 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
         XGIFreeRec(pScrn);
         return FALSE;
     }
-    xf86LoaderReqSymLists(fbSymbols, NULL);
 
     /* Load XAA if needed */
     if (!pXGI->NoAccel) 
@@ -4130,16 +3990,9 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 			if (!xf86LoadSubModule(pScrn, "xaa")) {
 				XGIErrorLog(pScrn, "Could not load xaa module\n");
 
-				if (pXGIEnt)
-					pXGIEnt->ErrorAfterFirst = TRUE;
-
-				if (pXGI->pInt)
-					xf86FreeInt10(pXGI->pInt);
-				xgiRestoreExtRegisterLock(pXGI, srlockReg, crlockReg);
-				XGIFreeRec(pScrn);
-				return FALSE;
+				pXGI->NoAccel = TRUE;
+				pXGI->ShadowFB = TRUE;
 			}
-			xf86LoaderReqSymLists(xaaSymbols, NULL);
 		}
 #endif
 
@@ -4150,7 +4003,6 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 			  XGIErrorLog(pScrn, "Could not load exa module\n");
 			  return FALSE;
 		   }
-		   xf86LoaderReqSymLists(exaSymbols, NULL);
 		}
 #endif
 	}
@@ -4169,16 +4021,12 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
             XGIFreeRec(pScrn);
             return FALSE;
         }
-        xf86LoaderReqSymLists(shadowSymbols, NULL);
     }
 
     /* Load the dri module if requested. */
 #ifdef XF86DRI
     if(pXGI->loadDRI) {
-        if (xf86LoadSubModule(pScrn, "dri")) {
-            xf86LoaderReqSymLists(driSymbols, drmSymbols, NULL);
-        }
-        else {
+        if (!xf86LoadSubModule(pScrn, "dri")) {
             if (!IS_DUAL_HEAD(pXGI))
                 xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                            "Remove >Load \"dri\"< from the Module section of your XF86Config file\n");
@@ -4505,8 +4353,8 @@ XGIModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		}
 
 		XGIPostSetMode(pScrn, &pXGI->ModeReg);
-		XGIAdjustFrame(pXGIEnt->pScrn_1->scrnIndex, pXGIEnt->pScrn_1->frameX0,
-				   pXGIEnt->pScrn_1->frameY0, 0);
+		XGIAdjustFrame(ADJUST_FRAME_ARGS(pXGIEnt->pScrn_1, pXGIEnt->pScrn_1->frameX0,
+				   pXGIEnt->pScrn_1->frameY0));
     }
     else
     {
@@ -4518,6 +4366,7 @@ XGIModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 			return FALSE;
 		}
 
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 12
 		/* Reset our PIOOffset as vgaHWInit might have reset it */
 		VGAHWPTR(pScrn)->PIOOffset = pXGI->IODBase - 0x380 +
 #ifdef XSERVER_LIBPCIACCESS
@@ -4526,6 +4375,7 @@ XGIModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
         (pXGI->PciInfo->ioBase[2] & 0xFFFC)
 #endif
         ;
+#endif
 
 		/* Prepare the register contents */
 		if (!(*pXGI->ModeInit) (pScrn, mode)) {
@@ -4651,14 +4501,14 @@ XGIRestore(ScrnInfoPtr pScrn)
 
 /* Our generic BlockHandler for Xv */
 static void
-XGIBlockHandler(int i, pointer blockData, pointer pTimeout, pointer pReadmask)
+XGIBlockHandler(BLOCKHANDLER_ARGS_DECL)
 {
-    ScreenPtr pScreen = screenInfo.screens[i];
-    ScrnInfoPtr pScrn = xf86Screens[i];
+    SCREEN_PTR(arg);
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     XGIPtr pXGI = XGIPTR(pScrn);
 
     pScreen->BlockHandler = pXGI->BlockHandler;
-    (*pScreen->BlockHandler) (i, blockData, pTimeout, pReadmask);
+    (*pScreen->BlockHandler) (BLOCKHANDLER_ARGS);
     pScreen->BlockHandler = XGIBlockHandler;
 
     if (pXGI->VideoTimerCallback) {
@@ -4698,7 +4548,7 @@ void xgiRestoreVirtual(ScrnInfoPtr pScrn)
  * pScrn->displayWidth : memory pitch
  */
 static Bool
-XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+XGIScreenInit(SCREEN_INIT_ARGS_DECL)
 {
     ScrnInfoPtr pScrn;
     vgaHWPtr hwp;
@@ -4711,7 +4561,7 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     XGIEntPtr pXGIEnt = NULL;
 
     ErrorF("XGIScreenInit\n");
-    pScrn = xf86Screens[pScreen->myNum];
+    pScrn = xf86ScreenToScrn(pScreen);
 
     PDEBUG(ErrorF("pScrn->currentMode->HDisplay = %d\n", pScrn->currentMode->HDisplay));
     PDEBUG(ErrorF("pScrn->currentMode->VDisplay = %d\n", pScrn->currentMode->VDisplay));
@@ -4771,7 +4621,6 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 #if !defined(__powerpc__)
     if (!IS_DUAL_HEAD(pXGI) || !IS_SECOND_HEAD(pXGI)) {
         if (xf86LoadSubModule(pScrn, "vbe")) {
-            xf86LoaderReqSymLists(vbeSymbols, NULL);
             pXGI->pVbe = VBEExtendedInit(NULL, pXGI->pEnt->index,
                                          SET_BIOS_SCRATCH |
                                          RESTORE_BIOS_SCRATCH);
@@ -4798,6 +4647,7 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     }
     vgaHWGetIOBase(hwp);
 
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 12
     /* Patch the PIOOffset inside vgaHW to use
      * our relocated IO ports.
      */
@@ -4808,6 +4658,7 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         (pXGI->PciInfo->ioBase[2] & 0xFFFC)
 #endif
         ;
+#endif
 
     /* Map the XGI memory and MMIO areas */
     if (!XGIMapMem(pScrn)) {
@@ -4846,7 +4697,8 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     XGISaveScreen(pScreen, SCREEN_SAVER_ON);
 
     /* Set the viewport */
-    XGIAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0); 
+    XGIAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0)); 
+
     /* XGIAdjustFrame(scrnIndex, 0, 0, 0); */
 
 	/* xgiRestoreVirtual(pScrn); */
@@ -4901,7 +4753,7 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     if (pXGI->ShadowFB) {
         pXGI->ShadowPitch = BitmapBytePad(pScrn->bitsPerPixel * width);
-        pXGI->ShadowPtr = xalloc(pXGI->ShadowPitch * height);
+        pXGI->ShadowPtr = malloc(pXGI->ShadowPitch * height);
         displayWidth = pXGI->ShadowPitch / (pScrn->bitsPerPixel >> 3);
         FBStart = pXGI->ShadowPtr;
     }
@@ -5168,7 +5020,7 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	PDEBUG(XGIDumpRegs(pScrn));
 
 	/* xgiRestoreVirtual(); */
-    XGIAdjustFrame(scrnIndex, 0, 0, 0); 
+    XGIAdjustFrame(ADJUST_FRAME_ARGS(pScrn, 0, 0)); 
 	pScrn->frameX0 = 0;
 	pScrn->frameY0 = 0; 
 	pScrn->frameX1 = pScrn->currentMode->HDisplay - 1 ;
@@ -5179,9 +5031,9 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
 /* Usually mandatory */
 Bool
-XGISwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
+XGISwitchMode(SWITCH_MODE_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
     XGIPtr pXGI = XGIPTR(pScrn);
 
 	if(pXGI->TargetRefreshRate)
@@ -5225,10 +5077,10 @@ XGISwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 
 #if 1
     /* Jong 07/29/2009; Set the viewport; still not working */
-    XGIAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+    XGIAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
 #endif
 
-    if (!(XGIModeInit(xf86Screens[scrnIndex], mode)))
+    if (!(XGIModeInit(pScrn, mode)))
         return FALSE;
 
 
@@ -5578,14 +5430,14 @@ XGIAdjustFrameMerged(int scrnIndex, int x, int y, int flags)
  * Usually mandatory
  */
 void
-XGIAdjustFrame(int scrnIndex, int x, int y, int flags)
+XGIAdjustFrame(ADJUST_FRAME_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
     XGIPtr pXGI = XGIPTR(pScrn);
     unsigned long base;
     unsigned char ucSR5Stat, ucTemp;
 
-    ErrorF("AdjustFrame %d\n", scrnIndex);
+    ErrorF("AdjustFrame %d\n", pScrn->scrnIndex);
     inXGIIDXREG(XGISR, 0x05, ucSR5Stat);
     if (ucSR5Stat == 0xA1)
         ucSR5Stat = 0x86;
@@ -5637,9 +5489,9 @@ XGIAdjustFrame(int scrnIndex, int x, int y, int flags)
  * Mandatory!
  */
 static Bool
-XGIEnterVT(int scrnIndex, int flags)
+XGIEnterVT(VT_FUNC_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
     XGIPtr pXGI = XGIPTR(pScrn);
 
     xgiSaveUnlockExtRegisterLock(pXGI, NULL, NULL);
@@ -5649,11 +5501,11 @@ XGIEnterVT(int scrnIndex, int flags)
         return FALSE;
     }
 
-    XGIAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+    XGIAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
 
 #ifdef XF86DRI
     if (pXGI->directRenderingEnabled) {
-        DRIUnlock(screenInfo.screens[scrnIndex]);
+        DRIUnlock(xf86ScrnToScreen(pScrn));
     }
 #endif
 
@@ -5670,9 +5522,9 @@ XGIEnterVT(int scrnIndex, int flags)
  * Mandatory!
  */
 static void
-XGILeaveVT(int scrnIndex, int flags)
+XGILeaveVT(VT_FUNC_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     XGIPtr pXGI = XGIPTR(pScrn);
 #ifdef XF86DRI
@@ -5680,7 +5532,7 @@ XGILeaveVT(int scrnIndex, int flags)
 
     PDEBUG(ErrorF("XGILeaveVT()\n"));
     if (pXGI->directRenderingEnabled) {
-        pScreen = screenInfo.screens[scrnIndex];
+        pScreen = xf86ScrnToScreen(pScrn);
         DRILock(pScreen, 0);
     }
 #endif
@@ -5713,9 +5565,9 @@ XGILeaveVT(int scrnIndex, int flags)
  * Mandatory!
  */
 static Bool
-XGICloseScreen(int scrnIndex, ScreenPtr pScreen)
+XGICloseScreen(CLOSE_SCREEN_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     XGIPtr pXGI = XGIPTR(pScrn);
 
@@ -5777,17 +5629,17 @@ XGICloseScreen(int scrnIndex, ScreenPtr pScreen)
     }
 
     if (pXGI->ShadowPtr) {
-        xfree(pXGI->ShadowPtr);
+        free(pXGI->ShadowPtr);
         pXGI->ShadowPtr = NULL;
     }
 
     if (pXGI->DGAModes) {
-        xfree(pXGI->DGAModes);
+        free(pXGI->DGAModes);
         pXGI->DGAModes = NULL;
     }
 
     if (pXGI->adaptor) {
-        xfree(pXGI->adaptor);
+        free(pXGI->adaptor);
         pXGI->adaptor = NULL;
         pXGI->ResetXv = pXGI->ResetXvGamma = NULL;
     }
@@ -5799,7 +5651,7 @@ XGICloseScreen(int scrnIndex, ScreenPtr pScreen)
 
     pScreen->CloseScreen = pXGI->CloseScreen;
 
-    return (*pScreen->CloseScreen) (scrnIndex, pScreen);
+    return (*pScreen->CloseScreen) (CLOSE_SCREEN_ARGS);
 }
 
 
@@ -5807,13 +5659,14 @@ XGICloseScreen(int scrnIndex, ScreenPtr pScreen)
 
 /* Optional */
 static void
-XGIFreeScreen(int scrnIndex, int flags)
+XGIFreeScreen(FREE_SCREEN_ARGS_DECL)
 {
+    SCRN_INFO_PTR(arg);
     if (xf86LoaderCheckSymbol("vgaHWFreeHWRec")) {
-        vgaHWFreeHWRec(xf86Screens[scrnIndex]);
+        vgaHWFreeHWRec(pScrn);
     }
 
-    XGIFreeRec(xf86Screens[scrnIndex]);
+    XGIFreeRec(pScrn);
 }
 
 
@@ -6015,7 +5868,7 @@ XGIValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 static Bool
 XGISaveScreen(ScreenPtr pScreen, int mode)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
 
     if ((pScrn != NULL) && pScrn->vtSema) {
 
@@ -6034,7 +5887,7 @@ static Bool
 XGISaveScreenDH(ScreenPtr pScreen, int mode)
 {
 #ifdef XGIDUALHEAD
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
 
     if ((pScrn != NULL) && pScrn->vtSema) {
         XGIPtr pXGI = XGIPTR(pScrn);

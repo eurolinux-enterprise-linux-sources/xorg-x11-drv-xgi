@@ -78,8 +78,9 @@
 #include "xgi.h"
 #include "xf86xv.h"
 #include <X11/extensions/Xv.h>
-#include "xaa.h"
+#ifdef HAVE_XAA_H
 #include "xaalocal.h"
+#endif
 #include "dixstruct.h"
 #include "fourcc.h"
 
@@ -127,7 +128,7 @@ static Atom xvBrightness, xvContrast, xvColorKey, xvSaturation, xvHue, xvmcUncom
 
 void XGIInitVideo(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     XF86VideoAdaptorPtr *adaptors, *newAdaptors = NULL;
     XF86VideoAdaptorPtr newAdaptor = NULL;
     int num_adaptors;
@@ -142,7 +143,7 @@ void XGIInitVideo(ScreenPtr pScreen)
             adaptors = &newAdaptor;
         } else {
             newAdaptors =  /* need to free this someplace */
-                xalloc((num_adaptors + 1) * sizeof(XF86VideoAdaptorPtr*));
+                malloc((num_adaptors + 1) * sizeof(XF86VideoAdaptorPtr*));
             if(newAdaptors) {
                 memcpy(newAdaptors, adaptors, num_adaptors *
                                         sizeof(XF86VideoAdaptorPtr));
@@ -157,7 +158,7 @@ void XGIInitVideo(ScreenPtr pScreen)
         xf86XVScreenInit(pScreen, adaptors, num_adaptors);
 
     if(newAdaptors)
-        xfree(newAdaptors);
+        free(newAdaptors);
 
 }
 
@@ -386,7 +387,7 @@ XGISetPortDefaults(ScrnInfoPtr pScrn, XGIPortPrivPtr pPriv)
 static XF86VideoAdaptorPtr
 XGISetupImageVideo(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     XGIPtr pXGI = XGIPTR(pScrn);
     XF86VideoAdaptorPtr adapt;
     XGIPortPrivPtr pPriv;
@@ -395,7 +396,7 @@ XGISetupImageVideo(ScreenPtr pScreen)
     struct v4l2_standard 	standard;
 # endif//VC    
 
-    if(!(adapt = xcalloc(1, sizeof(XF86VideoAdaptorRec) +
+    if(!(adapt = calloc(1, sizeof(XF86VideoAdaptorRec) +
                             sizeof(XGIPortPrivRec) +
                             sizeof(DevUnion))))
         return NULL;

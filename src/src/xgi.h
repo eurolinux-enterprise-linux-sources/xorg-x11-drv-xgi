@@ -169,7 +169,9 @@ extern BOOL g_bRunTimeDebug;
 #endif
 
 /* Jong 01/13/2009; support EXA */
+#ifdef HAVE_XAA_H
 #define XGI_USE_XAA 
+#endif
 /* #define XGI_USE_EXA */
 
 #ifdef XGI_USE_XAA
@@ -193,6 +195,8 @@ extern BOOL g_bRunTimeDebug;
 #include "osdef.h"
 #include "vgatypes.h"
 #include "vb_struct.h"
+
+#include "compat-api.h"
 
 #ifdef XF86DRI
 #define XGINEWDRI
@@ -623,7 +627,7 @@ typedef struct {
     unsigned char *     FbBase;         /* VRAM virtual linear address */
     CARD32              IOAddress;      /* MMIO physical address */
     unsigned char *     IOBase;         /* MMIO linear address */
-    IOADDRESS           IODBase;        /* Base of PIO memory area */
+    unsigned long           IODBase;        /* Base of PIO memory area */
 #ifdef __alpha__
     unsigned char *     IOBaseDense;    /* MMIO for Alpha platform */
 #endif
@@ -981,6 +985,7 @@ int compute_vclk(int Clock, int *out_n, int *out_dn, int *out_div,
 void XGI_WaitBeginRetrace(XGIIOADDRESS RelIO);
 void XGI_WaitEndRetrace(XGIIOADDRESS RelIO);
 
+#include <unistd.h>
 /* 2005/11/21 added by jjtseng */
 #define DelayS(sec) usleep((sec)*1000000)
 #define DelayMS(millisec) usleep((millisec)*1000)
