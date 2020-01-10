@@ -1,0 +1,25 @@
+From e26231b128289de190b9381d53bf62e70f06966b Mon Sep 17 00:00:00 2001
+From: Egbert Eich <eich@freedesktop.org>
+Date: Wed, 14 Aug 2013 13:11:08 +0200
+Subject: [PATCH] Remove mibstore.h to make driver build again
+
+Signed-off-by: Egbert Eich <eich@freedesktop.org>
+---
+ src/xgi_driver.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/xgi_driver.c b/src/xgi_driver.c
+index d5da592..a732eea 100755
+--- a/src/xgi_driver.c
++++ b/src/xgi_driver.c
+@@ -70,7 +70,6 @@
+ #include "vbe.h"
+ 
+ #include "mipointer.h"
+-#include "mibstore.h"
+ 
+ #include "xgi.h"
+ #include "xgi_regs.h"
+-- 
+1.8.5.3
+

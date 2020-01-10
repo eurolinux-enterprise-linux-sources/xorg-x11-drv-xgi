@@ -10,7 +10,7 @@
 Summary:   Xorg X11 xgi video driver
 Name:      xorg-x11-drv-xgi
 Version:   1.6.0
-Release:   18%{?gver}%{?dist}
+Release:   20%{?gver}%{?dist}
 URL:       http://www.x.org
 License:   MIT
 Group:     User Interface/X Hardware Support
@@ -29,6 +29,8 @@ Patch7: xgi-z9s-fix-dpms.patch
 Patch8: 0001-Fix-XGIValidMode-for-1.13-API.patch
 Patch9: 0001-i2c-Don-t-scream-on-literally-every-single-write-to-.patch
 Patch10: 0002-ddc-Fix-uncredible-fail-in-calling-xf86UnloadSubModu.patch
+Patch11: 0001-Remove-mibstore.h-to-make-driver-build-again.patch
+Patch12: 0001-Remove-call-to-miInitializeBackingStore-to-make-the-.patch
 
 ExcludeArch: s390 s390x
 
@@ -52,6 +54,8 @@ X.Org X11 xgi video driver.
 %patch8 -p1 -b .abi
 %patch9 -p1 -b .hush
 %patch10 -p1 -b .ddc-crash
+%patch11 -p1 -b .mibstore
+%patch12 -p1 -b .mibstore2
 
 %build
 %if 0%{?gitdate}
@@ -84,6 +88,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man4/xgi.4*
 
 %changelog
+* Thu Sep 11 2014 Adam Jackson <ajax@redhat.com> 1.6.0-20
+- Fix initialization to work post-mibs-removal
+
+* Wed Apr 23 2014 Adam Jackson <ajax@redhat.com> 1.6.0-19
+- Sync with git and rebuild for server 1.15
+
 * Fri Jan 18 2013 Adam Jackson <ajax@redhat.com> 1.6.0-18
 - Silence amazing amounts of log spam in the i2c code (#888607)
 - Fix a crash in DDC fetch (#888607)
